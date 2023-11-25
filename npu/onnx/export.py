@@ -4,6 +4,7 @@ import timm
 import torch
 import torchvision
 
+from ultralytics import YOLO
 
 
 def argparser():
@@ -11,7 +12,7 @@ def argparser():
     parser.add_argument('--module', type=str, default='yolo', help='yolo hub vision timm')
     parser.add_argument('--model', type=str, default='yolo')
     parser.add_argument('-c', '--checkpoint', type=str, default='yolov8s')
-    parser.add_argument('--device', type=str, default=1)
+    parser.add_argument('--device', type=str, default=0)
     return parser.parse_args()
 
 
@@ -23,6 +24,9 @@ else:
     DEVICE = torch.device('cpu')
     print(f'Device: {DEVICE}')
 
+def yolo(args):
+    model = YOLO(f'onnx/{args.checkpoint}.pt')
+    model.export(format="onnx", opset=13)
 
 def hub(args):
     if args.model == 'ssd':
