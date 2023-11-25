@@ -1,4 +1,4 @@
-# e8
+<!-- # e8
 
 ## How to run docker
 
@@ -12,10 +12,16 @@ Run docker container:
 ```
 nvidia-docker run --gpus all --name e8 --mount type=bind,source={source_data},target={target_dir} --network=host --ipc=host -i -t e8
 ```
-For example, if the source data is in your local directory `/data/e8` and you want to mount it to the default directory `/dataset`, arguments would be `--mount type=bind,source=/data/e8,target=/dataset`.
+For example, if the source data is in your local directory `/data/e8` and you want to mount it to the default directory `/dataset`, arguments would be `--mount type=bind,source=/data/e8,target=/dataset`. -->
 
 
 ### GPU train
+#### prerequisite
+```bash
+pip install ninja yacs cython matplotlib \
+opencv-python tqdm pycocotools scikit-learn openpyxl \
+torch torchvision torchaudio
+```
 #### EfficientNet
 ```bash
 python EFNET/train.py \
@@ -27,7 +33,8 @@ python EFNET/train.py \
 ```
 #### MaskRCNN
 ```bash
-python MRCNN/train.py
+python MRCNN/train.py \
+--dir /home/elicer/dataset
 ```
 
 ```bash
@@ -36,6 +43,7 @@ python MRCNN/train.py
 #### SSD
 ```bash
 python SSD/train.py
+--dir /home/elicer/dataset
 ```
 
 ```bash
