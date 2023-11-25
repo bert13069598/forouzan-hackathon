@@ -49,3 +49,6 @@ python SSD/train.py
 ```bash
 
 ```
+
+#### reference
+https://github.com/jooeunkiim/e8
