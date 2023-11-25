@@ -39,7 +39,7 @@ from sklearn.metrics import f1_score
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def build_net(num_classes):
     net = models.efficientnet_b0(weights='EfficientNet_B0_Weights.DEFAULT')
-    net.classifier = nn.Linear(1280, 7)
+    net.classifier = nn.Linear(1280, 2)
     # num_ftrs = net.fc.in_features
     # net.fc = nn.Linear(num_ftrs, num_classes)
     return net
@@ -119,6 +119,7 @@ def test_model(model):
     total_f1_score = 0.0
     total_acc = 0.0
     counts = 0
+    running_corrects = 0
     for batch_idx, (inputs, labels) in enumerate(testloader):
         counts += 1
         inputs = inputs.to(device)

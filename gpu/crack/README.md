@@ -25,11 +25,8 @@ torch torchvision torchaudio
 #### EfficientNet
 ```bash
 python EFNET/train.py \
---train /home/elicer/dataset/train \
---test /home/elicer/dataset/test
-```
-```bash
-
+--train /home/elicer/dataset/crack_3cls/train \
+--test /home/elicer/dataset/crack_3cls/test
 ```
 #### MaskRCNN
 ```bash
