@@ -9,7 +9,6 @@ transforms = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((224, 224)) # H, W
 ])
-labels = {i:"" for i in range(10)}
 parser = argparse.ArgumentParser(description="train efficientnet-b0")
 parser.add_argument("--train", default="dataset/train", type=str, help="train folder")
 parser.add_argument("--test", default="dataset/test", type=str, help="test folder")
@@ -17,8 +16,10 @@ parser.add_argument("--model", default="eff_net.pt", type=str, help="model name 
 args = parser.parse_args()
 trainset = ImageFolder(root=args.train, transform=transforms, target_transform=None)
 testset = ImageFolder(root=args.test, transform=transforms, target_transform=None)
-print(trainset.classes[label] for label in labels)
+labels = {i:"" for i in range(len(trainset.classes))}
 print(trainset.classes)
+print([trainset.classes[label] for label in labels])
+
 
 from torch.utils.data import DataLoader
 trainloader = DataLoader(trainset, batch_size=4, shuffle=True, pin_memory=True, num_workers=4)
@@ -37,9 +38,10 @@ from sklearn.metrics import f1_score
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def build_net(num_classes):
-    net = models.efficientnet_b0(pretrained=True)
-    num_ftrs = net.fc.in_features
-    net.fc = nn.Linear(num_ftrs, num_classes)
+    net = models.efficientnet_b0(weights='EfficientNet_B0_Weights.DEFAULT')
+    net.classifier = nn.Linear(1280, 7)
+    # num_ftrs = net.fc.in_features
+    # net.fc = nn.Linear(num_ftrs, num_classes)
     return net
 
 net = build_net(len(trainset.classes))
@@ -94,8 +96,8 @@ def train_model(model, criterion, optimizer, num_epochs=25):
 
             # statistics
             running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(preds == labels.data)
-            current_f1_score = f1_score(labels.data, preds)
+            running_corrects += torch.sum(preds.cpu() == labels.data.cpu())
+            current_f1_score = f1_score(labels.data.cpu(), preds.cpu(), average='micro')
 
             epoch_loss = running_loss / len(trainset)
             epoch_acc = running_corrects.double() / len(trainset)
@@ -105,6 +107,7 @@ def train_model(model, criterion, optimizer, num_epochs=25):
             if epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(), args.model)
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
@@ -132,9 +135,9 @@ def test_model(model):
                 logs[allFiles[batch_idx * 4 + i]] = {"pred":preds[i].item(), "true":labels[i].item()}
 
         # statistics
-        running_corrects += torch.sum(preds == labels.data)
+        running_corrects += torch.sum(preds.cpu() == labels.data.cpu())
 
-        current_f1_score = f1_score(labels.data, preds)
+        current_f1_score = f1_score(labels.data.cpu(), preds.cpu(), average='micro')
         total_f1_score += current_f1_score
 
         epoch_acc = running_corrects.double() / len(testset)
@@ -148,4 +151,4 @@ def test_model(model):
 model = train_model(model=net, criterion=criterion, optimizer=optimizer, num_epochs=25)
 model = test_model(model)
 print('Finished Training')
-torch.save(model.state_dict(), args.model)
+
