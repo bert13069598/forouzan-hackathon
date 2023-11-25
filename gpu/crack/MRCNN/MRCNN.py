@@ -38,7 +38,7 @@ import torchvision
 #    json.dump(dic, f)
 
 # %%
-dic = json.load(open("dic.json","r"))
+dic = json.load(open("MRCNN/dic.json","r"))
 
 # %%
 #temp = dic
@@ -63,7 +63,7 @@ dic = json.load(open("dic.json","r"))
 #    json.dump(labels, f)
 
 # %%
-label_map = json.load(open("labels.json", "r"))
+label_map = json.load(open("MRCNN/labels.json", "r"))
 
 # %%
 

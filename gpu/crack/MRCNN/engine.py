@@ -10,8 +10,8 @@ import utils
 from sklearn.metrics import average_precision_score, confusion_matrix
 import torchvision
 import json
-dic = json.load(open("dic.json","r"))
-label_map = json.load(open("labels.json", "r"))
+dic = json.load(open("MRCNN/dic.json","r"))
+label_map = json.load(open("MRCNN/labels.json", "r"))
 
 decode = {}
 for k, v in label_map.items():

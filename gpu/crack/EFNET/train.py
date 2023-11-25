@@ -128,8 +128,8 @@ def test_model(model):
             _, preds = torch.max(outputs, 1)
 
             for i in range(inputs.size()[0]):
-                #현재 파일에 대한 파일경로
-                logs[allFiles[batch_idx * 4 + i]] = {"pred":preds[i].item(), "true", labels[i].item()}
+                # currnet file path
+                logs[allFiles[batch_idx * 4 + i]] = {"pred":preds[i].item(), "true":labels[i].item()}
 
         # statistics
         running_corrects += torch.sum(preds == labels.data)

@@ -10,8 +10,8 @@ import json
 import numpy as np
 
 
-dic = json.load(open("dic.json","r"))
-label_map = json.load(open("labels.json", "r"))
+dic = json.load(open("SSD/dic.json","r"))
+label_map = json.load(open("SSD/labels.json", "r"))
 
 W, H = 1080, 1440
 W_new, H_new = 360, 480
