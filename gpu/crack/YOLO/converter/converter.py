@@ -16,44 +16,51 @@ def argparser():
 args = argparser()
 
 
-def xyxy2yolo(bbox, shape):
-    height, width, _ = shape
-    x_min, y_min, x_max, y_max = bbox
+def convert_to_yolo_format(image_width, image_height, bounding_boxes):
+    yolo_boxes = []
+    for label, bbox in bounding_boxes:
+        x_min, y_min, x_max, y_max = bbox
+        x_center = (x_min + x_max) / 2.0 / image_width
+        y_center = (y_min + y_max) / 2.0 / image_height
+        box_width = (x_max - x_min) / image_width
+        box_height = (y_max - y_min) / image_height
 
-    cx = (x_min + x_max) / 2.0
-    cy = (y_min + y_max) / 2.0
-    w = x_max - x_min
-    h = y_max - y_min
-    
-    cx /= width
-    cy /= height
-    w /= width
-    h /= height
-    return [cx, cy, w, h]
+        yolo_format = f"{label} {x_center:.6f} {y_center:.6f} {box_width:.6f} {box_height:.6f}\n"
+        yolo_boxes.append(yolo_format)
+
+    return yolo_boxes
+
+
+
 cls_list=[]
 def find_bbox(image_path, output_path):
     image = cv2.imread(image_path)
-    w,h,_=image.shape
+    h,w ,_=image.shape
     
 
     label_path = image_path.replace('images', 'anno').replace('jpg','json')
 
-    bboxes = []
     with open(label_path, 'r') as file:
         json_data = json.load(file)
         annotations = json_data.get("Learning_Data_Info", {}).get("Annotations", [])
         class_id_bbox_info = [(anno.get("Class_ID"), anno.get("bbox", [])) for anno in annotations]
 
+    # print(w, h)
+    # print(class_id_bbox_info)
+
+    bboxes = convert_to_yolo_format(w, h, class_id_bbox_info)
+
+    # print(bboxes)
+
+
     with open(image_path.replace('images', 'labels').replace('jpg', 'txt'), 'w') as file:
-        for cls, bbox in class_id_bbox_info:
-            cls_list.append(cls)
-            bbox=xyxy2yolo(bbox, image.shape)
-            file.write(f"{cls} {' '.join(map(lambda x: format(x, '.6f'), bbox))}")
+        for bbox in bboxes:
+            file.write(bbox)
     
 
 def convert(image_paths, output_path):
     for image_path in tqdm(image_paths):
-        bboxes = find_bbox(image_path, output_path)
+        find_bbox(image_path, output_path)
 
 
 
