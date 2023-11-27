@@ -4,10 +4,14 @@ import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
 import argparse
 import json
+from tqdm import tqdm
 
 transforms = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((224, 224)) # H, W
+    transforms.Resize((224, 224)), # H, W
+    transforms.RandomRotation(10),
+    transforms.RandomHorizontalFlip(p=0.5)
+
 ])
 parser = argparse.ArgumentParser(description="train efficientnet-b0")
 parser.add_argument("--train", default="dataset/train", type=str, help="train folder")
@@ -22,8 +26,8 @@ print([trainset.classes[label] for label in labels])
 
 
 from torch.utils.data import DataLoader
-trainloader = DataLoader(trainset, batch_size=4, shuffle=True, pin_memory=True, num_workers=4)
-testloader = DataLoader(testset, batch_size=4, shuffle=False, pin_memory=True, num_workers=4)
+trainloader = DataLoader(trainset, batch_size=32, shuffle=True, pin_memory=True, num_workers=4)
+testloader = DataLoader(testset, batch_size=16, shuffle=False, pin_memory=True, num_workers=4)
 allFiles, _ = map(list, zip(*testloader.dataset.samples))
 
 import torch.nn as nn 
@@ -39,9 +43,9 @@ from sklearn.metrics import f1_score
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def build_net(num_classes):
     net = models.efficientnet_b0(weights='EfficientNet_B0_Weights.DEFAULT')
+    # net.avgpool = nn.AdaptiveMaxPool2d(1)
     net.classifier = nn.Linear(1280, 2)
-    # num_ftrs = net.fc.in_features
-    # net.fc = nn.Linear(num_ftrs, num_classes)
+    net.load_state_dict(torch.load("eff_net0.pt"), strict=False)
     return net
 
 net = build_net(len(trainset.classes))
@@ -56,9 +60,9 @@ if args.model in os.listdir():
         print("failed to load model, creating new one")
         
 criterion = nn.CrossEntropyLoss() 
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.AdamW(net.parameters(), lr=0.001)
 
-def train_model(model, criterion, optimizer, num_epochs=25):
+def train_model(model, criterion, optimizer, num_epochs=10):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -76,7 +80,7 @@ def train_model(model, criterion, optimizer, num_epochs=25):
         running_corrects = 0
 
         # Iterate over data.
-        for inputs, labels in trainloader:
+        for inputs, labels in tqdm(trainloader):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -102,12 +106,12 @@ def train_model(model, criterion, optimizer, num_epochs=25):
             epoch_loss = running_loss / len(trainset)
             epoch_acc = running_corrects.double() / len(trainset)
 
-            print('Loss: {:.4f} Acc: {:.4f} F1 Score: {:.4f}'.format(epoch_loss, epoch_acc, current_f1_score))
-            # deep copy the model
-            if epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(model.state_dict(), args.model)
+        print('Loss: {:.4f} Acc: {:.4f} F1 Score: {:.4f}'.format(epoch_loss, epoch_acc, current_f1_score))
+        # deep copy the model
+        if epoch_acc > best_acc:
+            best_acc = epoch_acc
+            best_model_wts = copy.deepcopy(model.state_dict())
+            torch.save(model.state_dict(), args.model)
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
@@ -120,14 +124,14 @@ def test_model(model):
     total_acc = 0.0
     counts = 0
     running_corrects = 0
-    for batch_idx, (inputs, labels) in enumerate(testloader):
+    for batch_idx, (inputs, labels) in enumerate(tqdm(testloader)):
         counts += 1
         inputs = inputs.to(device)
         labels = labels.to(device)
        
         # forward
         # track history if only in train
-        with torch.set_grad_enabled(False):
+        with torch.no_grad():
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
 
@@ -143,13 +147,13 @@ def test_model(model):
 
         epoch_acc = running_corrects.double() / len(testset)
         total_acc += epoch_acc
-        print('Acc: {:.4f} F1 Score: {:.4f}'.format(epoch_acc, current_f1_score))
+    print('Acc: {:.4f} F1 Score: {:.4f}'.format(epoch_acc, current_f1_score))
 
     json.dump(logs, open("efnet_logs.json", "w"))
     print('Final average Acc and F1: {:4f} {:4f}'.format(total_acc/counts, total_f1_score/counts))
     return model
 #%% 
-model = train_model(model=net, criterion=criterion, optimizer=optimizer, num_epochs=25)
+model = train_model(model=net, criterion=criterion, optimizer=optimizer, num_epochs=5)
 model = test_model(model)
 print('Finished Training')
 
