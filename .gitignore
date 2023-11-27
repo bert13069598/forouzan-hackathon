@@ -1,0 +1,10 @@
+*.pyc
+
+*.csv
+
+*.jpg
+*.png
+*.jpeg
+
+*.onnx
+*.pt
