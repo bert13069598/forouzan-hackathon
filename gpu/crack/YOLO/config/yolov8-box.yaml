@@ -1,0 +1,10 @@
+names:
+- 0
+- 1
+- 2
+- 3
+nc: 4
+path: /home/elicer/dataset/crack_1
+test:
+train: train
+val: val
