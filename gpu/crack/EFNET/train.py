@@ -43,9 +43,8 @@ from sklearn.metrics import f1_score
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def build_net(num_classes):
     net = models.efficientnet_b0(weights='EfficientNet_B0_Weights.DEFAULT')
-    # net.avgpool = nn.AdaptiveMaxPool2d(1)
-    net.classifier = nn.Linear(1280, 2)
-    net.load_state_dict(torch.load("eff_net0.pt"), strict=False)
+    num_ftrs = net.classifier[1].in_features
+    net.classifier[1] = nn.Linear(num_ftrs, num_classes)
     return net
 
 net = build_net(len(trainset.classes))
